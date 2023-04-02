@@ -11,9 +11,9 @@
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-I",
-                "${workspaceFolder}/include",
+                "${workspaceFolder}/sdl-testing/include",
                 "-L",
-                "${workspaceFolder}/lib"
+                "${workspaceFolder}/sdl-testing/lib"
             ],
             "options": {
                 "cwd": "${fileDirname}"
