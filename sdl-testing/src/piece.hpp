@@ -4,14 +4,15 @@
 using namespace std;
 
 class Piece {
-    private:
-    vector<int> size;
+    protected:
     vector<vector<int>> shape;
+    int size[2];
 
     public:
-    Piece(vector<int> size, vector<vector<int>> shape);
-    vector<int> getSize();
+    Piece(vector<vector<int>> shape);
+    Piece();
     vector<vector<int>> getShape();
+    int* getSize();
 };
 
 #endif
