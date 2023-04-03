@@ -72,6 +72,18 @@ class PieceR : public Piece {
             pieceRects[i].x += x-this->x;
             pieceRects[i].y += y-this->y;
         }
+        for (int i = 0; i < interlines.size(); i++) {
+            interlines[i][0] += x-this->x;
+            interlines[i][1] += y-this->y;
+            interlines[i][2] += x-this->x;
+            interlines[i][3] += y-this->y;
+        }
+        for (int i = 0; i < outlines.size(); i++) {
+            outlines[i][0] += x-this->x;
+            outlines[i][1] += y-this->y;
+            outlines[i][2] += x-this->x;
+            outlines[i][3] += y-this->y;
+        }
         this->x = x;
         this->y = y;
     }
@@ -79,6 +91,8 @@ class PieceR : public Piece {
     // Thought this was kind of smart, in order to make outlines of the piece I added 0's on every space around the shape so it can detect when 0's and 1's meet properly
     void updateRects() {
         pieceRects.clear();
+        outlines.clear();
+        interlines.clear();
         int tempX = x-20, tempY = y-20;
         vector<vector<int>> tempShape;
         vector<int> tempVec;
@@ -159,7 +173,7 @@ class PieceR : public Piece {
         copy(pieceRects.begin(),pieceRects.end(),arr);
         SDL_RenderFillRects(renderer, arr, pieceRects.size());
         for (int i = 0; i < interlines.size(); i++) {
-            SDL_SetRenderDrawColor(renderer, interlineColor[0], interlineColor[1], interlineColor[2], 255);
+            SDL_SetRenderDrawColor(renderer, interlineColor[0], interlineColor[1], interlineColor[2], 0);
             SDL_RenderDrawLine(renderer, interlines[i][0], interlines[i][1], interlines[i][2], interlines[i][3]);
         }
         for (int i = 0; i < outlines.size(); i++) {
@@ -209,8 +223,8 @@ int main (int argc, char *argv[]) {
 
     vector<PieceR> pieces;
 
-    Piece piece1 = Piece({{1, 0}, {1, 1}});
-    Piece piece2 = Piece({{1, 1, 1}, {0, 0, 0}, {1, 1, 1}});
+    Piece piece1 = Piece({{1, 0}, {1, 1}, {0, 1}});
+    Piece piece2 = Piece({{1, 1, 1}, {0, 1, 0}});
 
     pieces.emplace_back(piece1, 200, 200);
     pieces.emplace_back(piece2, 800, 200);
@@ -239,6 +253,8 @@ int main (int argc, char *argv[]) {
                             if (pieces[i].pointInPiece(mouseX, mouseY)) {
                                 pieceBeingMoved = &pieces[i];
                                 pieces[i].setBeingMoved(true);
+                                pieces.push_back(*pieceBeingMoved);
+                                pieces.erase(pieces.begin() + i);
                                 gapX = mouseX - pieces[i].getX();
                                 gapY = mouseY - pieces[i].getY();
                             }
