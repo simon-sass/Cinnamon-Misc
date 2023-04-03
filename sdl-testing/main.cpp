@@ -9,12 +9,19 @@ const int WIDTH = 1280, HEIGHT = 720;
 const int FPS = 60;
 const int frameDelay = 1000/FPS;
 
+int pieceColor[3] = {2, 48, 32};
+int backgroundColor[3] = {16, 16, 16};
+int outlineColor[3] = {255, 255, 255};
+int interlineColor[3] = {0, 0, 0};
+
 // Inherited class that handles the visual aspects of the piece class
 class PieceR : public Piece {
     private:
     vector<SDL_Rect> pieceRects;
     int x, y;
     bool beingMoved;
+    vector<vector<int>> outlines;
+    vector<vector<int>> interlines;
 
     public:
     PieceR() : Piece() {}
@@ -41,17 +48,7 @@ class PieceR : public Piece {
         this->size[1] = piece.getSize()[1];
         this->x = x;
         this->y = y;
-        int tempX = x, tempY = y;
-        for (int i = 0; i < shape.size(); i++) {
-            tempX = x;
-            for (int j = 0; j < shape[0].size(); j++) {
-                if (shape[i][j]) {
-                    pieceRects.push_back({tempX, tempY, 20, 20});
-                }
-                tempX += 20;
-            }
-            tempY += 20;
-        }
+        updateRects();
     }
 
     vector<SDL_Rect> getPieceRects() {
@@ -79,14 +76,96 @@ class PieceR : public Piece {
         this->y = y;
     }
 
+    // Thought this was kind of smart, in order to make outlines of the piece I added 0's on every space around the shape so it can detect when 0's and 1's meet properly
+    void updateRects() {
+        pieceRects.clear();
+        int tempX = x-20, tempY = y-20;
+        vector<vector<int>> tempShape;
+        vector<int> tempVec;
+        for (int i = 0; i < shape[0].size() + 2; i++) {
+            tempVec.push_back(0);
+        }
+        tempShape.push_back(tempVec);
+        for (int i = 0; i < shape.size(); i++) {
+            tempVec.clear();
+            tempVec.push_back(0);
+            for (int j = 0; j < shape[0].size(); j++) {
+                tempVec.push_back(shape[i][j]);
+            }
+            tempVec.push_back(0);
+            tempShape.push_back(tempVec);
+        }
+        tempVec.clear();
+        for (int i = 0; i < shape[0].size() + 2; i++) {
+            tempVec.push_back(0);
+        }
+        tempShape.push_back(tempVec);
+        // for (int i = 0; i < tempShape.size(); i++) {
+        //     for (int j = 0; j < tempShape[0].size(); j++) {
+        //         cout << tempShape[i][j] << " ";
+        //     }
+        //     cout << endl;
+        // }
+        // cout << endl;
+
+        vector<int> line;
+        bool right;
+        bool down;
+        for (int i = 0; i < tempShape.size()-1; i++) {
+            tempX = x-20;
+            for (int j = 0; j < tempShape[0].size()-1; j++) {
+                right = tempShape[i][j + 1];
+                down = tempShape[i + 1][j];
+                if (tempShape[i][j]) {
+                    pieceRects.push_back({tempX, tempY, 20, 20});
+                    line.insert(line.end(), {tempX+20, tempY, tempX+20, tempY+20});
+                    if (right) {
+                        interlines.push_back(line);
+                    } else {
+                        outlines.push_back(line);
+                    } line.clear();
+                    line.insert(line.end(), {tempX, tempY+20, tempX+20, tempY+20});
+                    if (down) {
+                        interlines.push_back(line);
+                    } else {
+                        outlines.push_back(line);
+                    } line.clear();
+                }
+                else {
+                    if (right) {
+                        line.insert(line.end(), {tempX+20, tempY, tempX+20, tempY+20});
+                        outlines.push_back(line);
+                        line.clear();
+                    }
+                    if (down) {
+                        line.insert(line.end(), {tempX, tempY+20, tempX+20, tempY+20});
+                        outlines.push_back(line);
+                        line.clear();
+                    }
+                }
+                tempX += 20;
+            }
+            tempY += 20;
+        }
+    }
+
     void setBeingMoved(bool moved) {
         beingMoved = moved;
     }
 
     void drawPiece(SDL_Renderer* renderer) {
+        SDL_SetRenderDrawColor(renderer, pieceColor[0], pieceColor[1], pieceColor[2], 255);
         SDL_Rect arr[pieceRects.size()];
         copy(pieceRects.begin(),pieceRects.end(),arr);
-        SDL_RenderDrawRects(renderer, arr, pieceRects.size());
+        SDL_RenderFillRects(renderer, arr, pieceRects.size());
+        for (int i = 0; i < interlines.size(); i++) {
+            SDL_SetRenderDrawColor(renderer, interlineColor[0], interlineColor[1], interlineColor[2], 255);
+            SDL_RenderDrawLine(renderer, interlines[i][0], interlines[i][1], interlines[i][2], interlines[i][3]);
+        }
+        for (int i = 0; i < outlines.size(); i++) {
+            SDL_SetRenderDrawColor(renderer, outlineColor[0], outlineColor[1], outlineColor[2], 255);
+            SDL_RenderDrawLine(renderer, outlines[i][0], outlines[i][1], outlines[i][2], outlines[i][3]);
+        }
     }
 
     bool pointInPiece(int x, int y) {
@@ -110,25 +189,14 @@ class PieceR : public Piece {
         }
         shape = newShape;
 
-        pieceRects.clear();
-        int tempX = x, tempY = y;
-        for (int i = 0; i < shape.size(); i++) {
-            tempX = x;
-            for (int j = 0; j < shape[0].size(); j++) {
-                if (shape[i][j]) {
-                    pieceRects.push_back({tempX, tempY, 20, 20});
-                }
-                tempX += 20;
-            }
-            tempY += 20;
-        }
+        updateRects();
     }
 };
 
 int main (int argc, char *argv[]) {
     SDL_Init(SDL_INIT_EVERYTHING);
 
-    SDL_Window* window = SDL_CreateWindow("Inventory Management", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_Window* window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_RenderSetVSync(renderer, 1);
 
@@ -142,9 +210,7 @@ int main (int argc, char *argv[]) {
     vector<PieceR> pieces;
 
     Piece piece1 = Piece({{1, 0}, {1, 1}});
-    Piece piece2 = Piece();
-
-    // PieceR piecer = PieceR(piece, 200, 200);
+    Piece piece2 = Piece({{1, 1, 1}, {0, 0, 0}, {1, 1, 1}});
 
     pieces.emplace_back(piece1, 200, 200);
     pieces.emplace_back(piece2, 800, 200);
@@ -168,6 +234,7 @@ int main (int argc, char *argv[]) {
                 case SDL_MOUSEBUTTONDOWN:
                     mouseState = SDL_GetMouseState(NULL, NULL);
                     if (mouseState == 1) {
+                        // cout << mouseX << " " << mouseY << endl;
                         for (int i = 0; i < pieces.size(); i++) {
                             if (pieces[i].pointInPiece(mouseX, mouseY)) {
                                 pieceBeingMoved = &pieces[i];
@@ -177,7 +244,7 @@ int main (int argc, char *argv[]) {
                             }
                         }
                     }
-                    else if (mouseState == 5) {
+                    else if (mouseState == 5 && pieceBeingMoved != nullptr) {
                         pieceBeingMoved->rotate();
                     }
                     break;
@@ -200,10 +267,8 @@ int main (int argc, char *argv[]) {
 
         // -----Rendering-----
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, backgroundColor[0], backgroundColor[1], backgroundColor[2], 255);
         SDL_RenderClear(renderer);
-
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         
         for (PieceR piece : pieces) {
             piece.drawPiece(renderer);
