@@ -1,6 +1,6 @@
 #include <iostream>
 #include <SDL2/SDL.h>
-#include "src/piece.cpp"
+#include "src/board.cpp"
 #include <vector>
 #include <array>
 using namespace std;
@@ -13,6 +13,7 @@ int pieceColor[3] = {2, 48, 32};
 int backgroundColor[3] = {16, 16, 16};
 int outlineColor[3] = {255, 255, 255};
 int interlineColor[3] = {0, 0, 0};
+int boardColor[3] = {50, 50, 50};
 
 // Inherited class that handles the visual aspects of the piece class
 class PieceR : public Piece {
@@ -207,6 +208,34 @@ class PieceR : public Piece {
     }
 };
 
+class BoardR : public Board {
+    private:
+    int x, y;
+    vector<SDL_Rect> boardRects;
+
+    public:
+    BoardR(int w, int h, int x, int y) : Board(w, h) {
+        this->x = x;
+        this->y = y;
+        int tempX = x, tempY = y;
+        for (int i = 0; i < board.size(); i++) {
+            tempX = x;
+            for (int j = 0; j < board[0].size(); j++) {
+                boardRects.push_back({tempX, tempY, 20, 20});
+                tempX += 20;
+            }
+            tempY += 20;
+        }
+    }
+
+    void drawBoard(SDL_Renderer* renderer) {
+        SDL_SetRenderDrawColor(renderer, boardColor[0], boardColor[1], boardColor[2], 255);
+        SDL_Rect arr[boardRects.size()];
+        copy(boardRects.begin(),boardRects.end(),arr);
+        SDL_RenderDrawRects(renderer, arr, boardRects.size());
+    }
+};
+
 int main (int argc, char *argv[]) {
     SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -221,13 +250,25 @@ int main (int argc, char *argv[]) {
 
     SDL_Event event;
 
+    BoardR board = BoardR(5, 5, 200, 200);
+
     vector<PieceR> pieces;
 
     Piece piece1 = Piece({{1, 0}, {1, 1}, {0, 1}});
-    Piece piece2 = Piece({{1, 1, 1}, {0, 1, 0}});
+    Piece piece2 = Piece({{1, 1, 1}, {0, 1, 1}});
+    Piece piece3 = Piece({{1, 1, 1}, {0, 0, 1}});
+    Piece piece4 = Piece({{1, 1}});
+    Piece piece5 = Piece({{1, 1, 1}, {1, 0, 0}});
+    Piece piece6 = Piece({{1, 1, 1}, {0, 0, 1}});
+    Piece piece7 = Piece({{1, 1}});
 
-    pieces.emplace_back(piece1, 200, 200);
-    pieces.emplace_back(piece2, 800, 200);
+    pieces.emplace_back(piece1, 100, 100);
+    pieces.emplace_back(piece2, 200, 100);
+    pieces.emplace_back(piece3, 300, 100);
+    pieces.emplace_back(piece4, 400, 100);
+    pieces.emplace_back(piece5, 500, 100);
+    pieces.emplace_back(piece6, 600, 100);
+    pieces.emplace_back(piece7, 700, 100);
 
     int mouseX, mouseY, gapX, gapY, mouseState;
 
@@ -286,6 +327,7 @@ int main (int argc, char *argv[]) {
         SDL_SetRenderDrawColor(renderer, backgroundColor[0], backgroundColor[1], backgroundColor[2], 255);
         SDL_RenderClear(renderer);
         
+        board.drawBoard(renderer);
         for (PieceR piece : pieces) {
             piece.drawPiece(renderer);
         }
