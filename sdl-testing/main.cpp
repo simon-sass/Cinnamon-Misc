@@ -14,6 +14,8 @@ int backgroundColor[3] = {16, 16, 16};
 int outlineColor[3] = {255, 255, 255};
 int interlineColor[3] = {0, 0, 0};
 int boardColor[3] = {50, 50, 50};
+int validHighlight[3] = {57, 255, 20};
+int invalidHighlight[3] = {255, 49, 49};
 
 // Inherited class that handles the visual aspects of the piece class
 class PieceR : public Piece {
@@ -234,7 +236,46 @@ class BoardR : public Board {
         copy(boardRects.begin(),boardRects.end(),arr);
         SDL_RenderDrawRects(renderer, arr, boardRects.size());
     }
+
+    vector<SDL_Rect> getBoardRects() {
+        return boardRects;
+    }
+
+    int getX() {
+        return x;
+    }
+
+    int getY() {
+        return y;
+    }
+
+    void highlight(SDL_Renderer* renderer, PieceR piece, int x, int y) {
+        vector<SDL_Rect> highlightRects;
+        int tempX = this->x + x*20;
+        int tempY = this->y + y*20;
+        vector<vector<int>> shape = piece.getShape();
+        for (int i = 0; i < shape.size(); i++) {
+            tempX = this->x + x*20;
+            for (int j = 0; j < shape[0].size(); j++) {
+                if (shape[i][j]) {
+                    highlightRects.push_back({tempX, tempY, 20, 20});
+                }
+                tempX += 20;
+            }
+            tempY += 20;
+        }
+        SDL_Rect arr[highlightRects.size()];
+        copy(highlightRects.begin(),highlightRects.end(),arr);
+        if (this->pieceEligible(piece, x, y)) {
+            SDL_SetRenderDrawColor(renderer, validHighlight[0], validHighlight[1], validHighlight[2], 255);
+        } else {
+            SDL_SetRenderDrawColor(renderer, invalidHighlight[0], invalidHighlight[1], invalidHighlight[2], 255);
+        }
+        SDL_RenderFillRects(renderer, arr, highlightRects.size());
+    }
 };
+
+
 
 int main (int argc, char *argv[]) {
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -254,13 +295,13 @@ int main (int argc, char *argv[]) {
 
     vector<PieceR> pieces;
 
-    Piece piece1 = Piece({{1, 0}, {1, 1}, {0, 1}});
-    Piece piece2 = Piece({{1, 1, 1}, {0, 1, 1}});
+    Piece piece1 = Piece({{1, 0}, {1, 1}});
+    Piece piece2 = Piece();
     Piece piece3 = Piece({{1, 1, 1}, {0, 0, 1}});
-    Piece piece4 = Piece({{1, 1}});
+    Piece piece4 = Piece();
     Piece piece5 = Piece({{1, 1, 1}, {1, 0, 0}});
     Piece piece6 = Piece({{1, 1, 1}, {0, 0, 1}});
-    Piece piece7 = Piece({{1, 1}});
+    Piece piece7 = Piece({{1, 1, 1}, {1, 0, 1}, {1, 1, 1}});
 
     pieces.emplace_back(piece1, 100, 100);
     pieces.emplace_back(piece2, 200, 100);
@@ -273,6 +314,10 @@ int main (int argc, char *argv[]) {
     int mouseX, mouseY, gapX, gapY, mouseState;
 
     PieceR* pieceBeingMoved = nullptr;
+    int pieceBeingMovedX, pieceBeingMovedY;
+    int boardSlotX, boardSlotY;
+    int leftGrid, topGrid;
+    bool pieceOverBoard;
 
     // Main Loop
     bool running = true;
@@ -280,7 +325,7 @@ int main (int argc, char *argv[]) {
 
         // -----Input handling-----
         mouseState = SDL_GetMouseState(&mouseX, &mouseY);
-
+        
         if (SDL_PollEvent(&event)){
             switch (event.type) {
                 case SDL_QUIT:
@@ -289,17 +334,19 @@ int main (int argc, char *argv[]) {
                 case SDL_MOUSEBUTTONDOWN:
                     mouseState = SDL_GetMouseState(NULL, NULL);
                     if (mouseState == 1) {
-                        // cout << mouseX << " " << mouseY << endl;
                         for (int i = 0; i < pieces.size(); i++) {
                             if (pieces[i].pointInPiece(mouseX, mouseY)) {
                                 pieceBeingMoved = &pieces[i];
                                 pieces[i].setBeingMoved(true);
-                                pieces.push_back(*pieceBeingMoved);
-                                pieces.erase(pieces.begin() + i);
                                 gapX = mouseX - pieces[i].getX();
                                 gapY = mouseY - pieces[i].getY();
+                                if (pieceBeingMoved->isInBoard()) {
+                                    board.removePiece(pieceBeingMoved);
+                                }
+                                goto FOUND;
                             }
                         }
+                        FOUND:;
                     }
                     else if (mouseState == 5 && pieceBeingMoved != nullptr) {
                         pieceBeingMoved->rotate();
@@ -309,6 +356,10 @@ int main (int argc, char *argv[]) {
                     mouseState = SDL_GetMouseState(NULL, NULL);
                     if (mouseState == 0) {
                         if (pieceBeingMoved != nullptr) {
+                            if (pieceOverBoard && board.pieceEligible(*pieceBeingMoved, boardSlotX, boardSlotY)) {
+                                board.addPiece(pieceBeingMoved, boardSlotX, boardSlotY);
+                                pieceBeingMoved->updateLoc(boardSlotX*20+board.getX(), boardSlotY*20+board.getY());
+                            }
                             pieceBeingMoved->setBeingMoved(false);
                             pieceBeingMoved = nullptr;
                         }
@@ -318,8 +369,23 @@ int main (int argc, char *argv[]) {
         }
 
         // -----In-Game Logic-----
+
         if (pieceBeingMoved != nullptr) {
             pieceBeingMoved->updateLoc(mouseX - gapX, mouseY - gapY);
+            pieceBeingMovedX = pieceBeingMoved->getX();
+            pieceBeingMovedY = pieceBeingMoved->getY();
+            pieceOverBoard = false;
+            for (int x = 0; x < board.getBoard()[0].size(); x++) {
+                leftGrid = x*20+board.getX()-10;
+                for (int y = 0; y < board.getBoard().size(); y++) {
+                    topGrid = y*20+board.getY()-10;
+                    if ((pieceBeingMovedX > leftGrid && pieceBeingMovedX <= leftGrid + 20) && (pieceBeingMovedY > topGrid && pieceBeingMovedY <= topGrid + 20)) {
+                        boardSlotX = x;
+                        boardSlotY = y;
+                        pieceOverBoard = true;
+                    }
+                }
+            }
         }
 
         // -----Rendering-----
@@ -328,8 +394,14 @@ int main (int argc, char *argv[]) {
         SDL_RenderClear(renderer);
         
         board.drawBoard(renderer);
+        if (pieceBeingMoved != nullptr && pieceOverBoard) {
+            board.highlight(renderer, *pieceBeingMoved, boardSlotX, boardSlotY);
+        }
         for (PieceR piece : pieces) {
             piece.drawPiece(renderer);
+        }
+        if (pieceBeingMoved != nullptr) {
+            pieceBeingMoved->drawPiece(renderer);
         }
 
         SDL_RenderPresent(renderer);

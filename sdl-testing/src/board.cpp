@@ -1,6 +1,7 @@
 #include "board.hpp"
 #include <vector>
 #include <iostream>
+#include <algorithm>
 using namespace std;
 
 Board::Board() {
@@ -20,13 +21,13 @@ vector<vector<int>> Board::getBoard() {
     return board;
 }
 
-vector<Piece> Board::getPieces() {
+vector<Piece*> Board::getPieces() {
     return pieces;
 }
 
-void Board::addPiece(Piece piece, int x, int y) {
+void Board::addPiece(Piece* piece, int x, int y) {
     pieces.push_back(piece);
-    vector<vector<int>> shape = piece.getShape();
+    vector<vector<int>> shape = piece->getShape();
     for (int i = 0; i < shape.size(); i++) {
         for (int j = 0; j < shape[0].size(); j++) {
             int sum = shape[i][j] + board[i+y][j+x];
@@ -35,6 +36,25 @@ void Board::addPiece(Piece piece, int x, int y) {
         }
         // cout << endl;
     }
+    piece->setInBoard(true);
+    piece->setBoardX(x);
+    piece->setBoardY(y);
+}
+
+void Board::removePiece(Piece* piece) {
+    vector<vector<int>> shape = piece->getShape();
+    piece->setInBoard(false);
+    int x = piece->getBoardX();
+    int y = piece->getBoardY();
+    for (int i = 0; i < shape.size(); i++) {
+        for (int j = 0; j < shape[0].size(); j++) {
+            int diff = board[i+y][j+x] - shape[i][j];
+            board[i+y][j+x] = diff;
+            // cout << sum << " ";
+        }
+        // cout << endl;
+    }
+    pieces.erase(remove(pieces.begin(), pieces.end(), piece), pieces.end());
 }
 
 bool Board::pieceEligible(Piece piece, int x, int y) {
