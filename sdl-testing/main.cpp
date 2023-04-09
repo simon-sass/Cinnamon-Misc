@@ -17,6 +17,15 @@ int boardColor[3] = {50, 50, 50};
 int validHighlight[3] = {57, 255, 20};
 int invalidHighlight[3] = {255, 49, 49};
 
+// Returning to this when smarter
+vector<Piece> puzzleGenerator(Board board) {
+    vector<vector<int>> boardSpaces;
+    boardSpaces = board.getBoard();
+    vector<Piece> pieces;
+
+    return pieces;
+}
+
 // Inherited class that handles the visual aspects of the piece class
 class PieceR : public Piece {
     private:
@@ -291,25 +300,16 @@ int main (int argc, char *argv[]) {
 
     SDL_Event event;
 
-    BoardR board = BoardR(5, 5, 200, 200);
+    BoardR board = BoardR(2, 2, 200, 200);
 
+    vector<Piece> basePieces;
     vector<PieceR> pieces;
 
-    Piece piece1 = Piece({{1, 0}, {1, 1}});
-    Piece piece2 = Piece();
-    Piece piece3 = Piece({{1, 1, 1}, {0, 0, 1}});
-    Piece piece4 = Piece();
-    Piece piece5 = Piece({{1, 1, 1}, {1, 0, 0}});
-    Piece piece6 = Piece({{1, 1, 1}, {0, 0, 1}});
-    Piece piece7 = Piece({{1, 1, 1}, {1, 0, 1}, {1, 1, 1}});
+    basePieces = puzzleGenerator(board);
 
-    pieces.emplace_back(piece1, 100, 100);
-    pieces.emplace_back(piece2, 200, 100);
-    pieces.emplace_back(piece3, 300, 100);
-    pieces.emplace_back(piece4, 400, 100);
-    pieces.emplace_back(piece5, 500, 100);
-    pieces.emplace_back(piece6, 600, 100);
-    pieces.emplace_back(piece7, 700, 100);
+    for (int i = 0; i < basePieces.size(); i++) {
+        pieces.emplace_back(basePieces[i], i*100+100, 100);
+    }
 
     int mouseX, mouseY, gapX, gapY, mouseState;
 

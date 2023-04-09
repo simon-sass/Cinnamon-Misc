@@ -17,6 +17,12 @@ Board::Board(int w, int h) {
     }
 }
 
+Board::Board(vector<vector<int>> board) {
+    for (vector<int> vector : board) {
+        board.push_back(vector);
+    }
+}
+
 vector<vector<int>> Board::getBoard() {
     return board;
 }

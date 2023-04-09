@@ -12,6 +12,7 @@ class Board {
     public:
     Board();
     Board(int w, int h);
+    Board(vector<vector<int>> board);
     vector<vector<int>> getBoard();
     vector<Piece*> getPieces();
     void addPiece(Piece* piece, int x, int y);
