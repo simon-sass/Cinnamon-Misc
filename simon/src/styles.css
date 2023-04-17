@@ -1,0 +1,58 @@
+*, *::before, *::after {
+    font-family: monospace;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    background: black
+}
+
+#simon-buttons {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    padding-top: 25vh;
+    grid-template-columns: 110px 110px;
+    grid-template-rows: 110px 110px;
+}
+
+#simon-buttons button {
+    outline: none;
+    height: 100px;
+    width: 100px;
+    border: none;
+    border-radius: 10px;
+    margin:auto;
+    transition-property: background-color;
+    transition-duration: 300ms;
+}
+
+#button-one {
+    background-color: green;
+}
+
+#button-two {
+    background-color: red;
+}
+
+#button-three {
+    background-color: yellow;
+}
+
+#button-four {
+    background-color: blue;
+}
+
+#start-container {
+    text-align: center;
+    padding-top: 10vh;
+}
+
+#start-reset {
+    background-color: white;
+    border: none;
+    width: 10vw;
+    height: 3vh;
+    font-size: 20px;
+}
