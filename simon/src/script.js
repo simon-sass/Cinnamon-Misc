@@ -4,6 +4,8 @@ button2 = document.getElementById('button-two');
 button3 = document.getElementById('button-three');
 button4 = document.getElementById('button-four');
 buttons = [button1, button2, button3, button4]
+scoreElement = document.getElementById('score');
+score = 0;
 
 const timer = ms => new Promise(res => setTimeout(res, ms))
 let correctSequence = [];
@@ -15,6 +17,7 @@ function start() {
         buttons[i].addEventListener('click', addChoiceFunction(i + 1));
     }
     startButton.innerHTML = "Reset";
+    score = 0;
     readNextSequence();
     startButton.addEventListener('click', reset);
     startButton.removeEventListener('click', start);
@@ -45,6 +48,7 @@ function gameLost() {
 async function reset() {
     correctSequence = [];
     currentSequence = [];
+    score = 0;
     for (let i = 0; i < 4; i++) {
         buttons[i].removeEventListener('click', flashFunction(buttons[i]));
         buttons[i].removeEventListener('click', addChoiceFunction(i + 1));
@@ -87,6 +91,8 @@ function addChoice(choice) {
 }
 
 async function readNextSequence() {
+    score += 1;
+    scoreElement.innerHTML = score;
     correctSequence += (Math.floor(Math.random() * 4) + 1)
     for (let i = 0; i < correctSequence.length; i++) {
         flash(buttons[correctSequence[i]-1]);
